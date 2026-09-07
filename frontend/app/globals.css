@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  background-color: #0A0D12;
+  color: #E7EAF0;
+}
+
+* {
+  border-color: #262D3A;
+}
+
+::selection {
+  background: rgba(63, 208, 201, 0.25);
+}
+
+/* subtle scanline-esque background texture for the void, applied once at the shell level */
+.bg-command-center {
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(63,208,201,0.06), transparent 40%),
+    radial-gradient(circle at 85% 15%, rgba(63,208,201,0.04), transparent 35%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid #3FD0C9;
+  outline-offset: 2px;
+}
+
+/* Rendered assistant Markdown inside chat bubbles */
+.prose-chat p { margin: 0 0 0.6em 0; }
+.prose-chat p:last-child { margin-bottom: 0; }
+.prose-chat h1, .prose-chat h2, .prose-chat h3 {
+  font-family: var(--font-display, inherit);
+  font-weight: 600;
+  color: #E7EAF0;
+  margin: 0.9em 0 0.4em 0;
+}
+.prose-chat h1:first-child, .prose-chat h2:first-child, .prose-chat h3:first-child { margin-top: 0; }
+.prose-chat h1 { font-size: 1.05rem; }
+.prose-chat h2 { font-size: 1rem; }
+.prose-chat h3 { font-size: 0.925rem; }
+.prose-chat strong { color: #E7EAF0; font-weight: 600; }
+.prose-chat ul, .prose-chat ol {
+  margin: 0.4em 0 0.6em 0;
+  padding-left: 1.3em;
+}
+.prose-chat li { margin: 0.2em 0; }
+.prose-chat ul { list-style-type: disc; }
+.prose-chat ol { list-style-type: decimal; }
+.prose-chat code {
+  background: #1A2029;
+  border: 1px solid #262D3A;
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.85em;
+}
+.prose-chat pre {
+  background: #1A2029;
+  border: 1px solid #262D3A;
+  border-radius: 8px;
+  padding: 0.75em 1em;
+  overflow-x: auto;
+  margin: 0.6em 0;
+}
+.prose-chat pre code { background: none; border: none; padding: 0; }
+.prose-chat table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.6em 0;
+  font-size: 0.85em;
+}
+.prose-chat th, .prose-chat td {
+  border: 1px solid #262D3A;
+  padding: 0.45em 0.6em;
+  text-align: left;
+  vertical-align: top;
+}
+.prose-chat th {
+  background: #1A2029;
+  color: #E7EAF0;
+  font-weight: 600;
+}
+.prose-chat tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+.prose-chat a { color: #3FD0C9; text-decoration: underline; text-underline-offset: 2px; }
+.prose-chat blockquote {
+  border-left: 2px solid #3FD0C9;
+  padding-left: 0.8em;
+  margin: 0.6em 0;
+  color: #8B93A5;
+}
+.prose-chat hr { border-color: #262D3A; margin: 0.8em 0; }
