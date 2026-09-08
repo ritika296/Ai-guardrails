@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import config
 from app.utils.errors import generic_exception_handler
 from app.api import health, chat, guardrail, attack, evaluation, demo, session
-
+print("DEBUG: GROQ_API_KEY starts with:", config.GROQ_API_KEY[:6] if config.GROQ_API_KEY else "EMPTY")
 app = FastAPI(
     title="AI Guardrails API",
     description="Backend for the AI Guardrails: Build, Attack, and Protect an AI Student Support Assistant project.",
