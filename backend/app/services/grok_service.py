@@ -1,7 +1,8 @@
 """
-Reusable client for the xAI Grok API. All Grok calls in this project go
-through here so error handling, timeouts, and retries are consistent —
-and so the API key never has to be touched anywhere else in the codebase.
+Reusable client for the Groq API (OpenAI-compatible chat completions endpoint).
+All LLM calls in this project go through here so error handling, timeouts, and
+retries are consistent - and so the API key never has to be touched anywhere
+else in the codebase.
 """
 import json
 import time
@@ -25,12 +26,12 @@ async def call_grok(
     force_json: bool = False,
 ) -> str:
     """
-    Calls the Grok chat completions endpoint. Returns the raw text content.
+    Calls the Groq chat completions endpoint. Returns the raw text content.
     Raises GrokServiceError with a safe, user-facing message on any failure.
     """
     if not config.grok_configured():
         raise GrokServiceError(
-            "Grok API key is not configured. Set XAI_API_KEY in your .env file.",
+            "Groq API key is not configured. Set GROQ_API_KEY in your .env file.",
             code="missing_api_key",
         )
 
@@ -47,7 +48,7 @@ async def call_grok(
         payload["response_format"] = {"type": "json_object"}
 
     headers = {
-        "Authorization": f"Bearer {config.XAI_API_KEY}",
+        "Authorization": f"Bearer {config.GROQ_API_KEY}",
         "Content-Type": "application/json",
     }
 
@@ -56,44 +57,54 @@ async def call_grok(
         try:
             async with httpx.AsyncClient(timeout=config.GROK_TIMEOUT_SECONDS) as client:
                 resp = await client.post(
-                    f"{config.XAI_BASE_URL}/chat/completions",
+                    f"{config.GROQ_BASE_URL}/chat/completions",
                     json=payload,
                     headers=headers,
                 )
-            if resp.status_code == 401:
-                raise GrokServiceError("Grok API key was rejected (invalid key).", code="invalid_api_key")
+            if resp.status_code in (401, 403):
+                raise GrokServiceError("Groq API key was rejected (invalid or unauthorized key).", code="invalid_api_key")
             if resp.status_code == 429:
-                raise GrokServiceError("Grok API rate limit reached. Please try again shortly.", code="rate_limited")
+                raise GrokServiceError("Groq API rate limit reached. Please try again shortly.", code="rate_limited")
             if resp.status_code == 404:
-                raise GrokServiceError(f"Grok model '{config.GROK_MODEL}' is unavailable.", code="model_unavailable")
+                raise GrokServiceError(f"Groq model '{config.GROK_MODEL}' is unavailable.", code="model_unavailable")
+            if resp.status_code == 400:
+                try:
+                    detail = resp.json().get("error", {})
+                    detail_msg = detail.get("message") if isinstance(detail, dict) else str(detail)
+                except Exception:
+                    detail_msg = resp.text[:200]
+                raise GrokServiceError(
+                    f"Groq rejected the request (400): {detail_msg or 'bad request'}",
+                    code="bad_request",
+                )
             if resp.status_code >= 500:
-                raise GrokServiceError("Grok API is temporarily unavailable.", code="upstream_error")
+                raise GrokServiceError("Groq API is temporarily unavailable.", code="upstream_error")
             resp.raise_for_status()
 
             data = resp.json()
             choices = data.get("choices", [])
             if not choices:
-                raise GrokServiceError("Grok returned an empty response.", code="malformed_response")
+                raise GrokServiceError("Groq returned an empty response.", code="malformed_response")
             content = choices[0].get("message", {}).get("content")
             if content is None:
-                raise GrokServiceError("Grok returned a malformed response.", code="malformed_response")
+                raise GrokServiceError("Groq returned a malformed response.", code="malformed_response")
             return content
 
         except GrokServiceError as e:
-            if e.code in {"invalid_api_key", "missing_api_key", "model_unavailable"}:
+            if e.code in {"invalid_api_key", "missing_api_key", "model_unavailable", "bad_request"}:
                 raise
             last_error = e
         except httpx.TimeoutException as e:
-            last_error = GrokServiceError("Grok API request timed out.", code="timeout")
+            last_error = GrokServiceError("Groq API request timed out.", code="timeout")
         except httpx.NetworkError as e:
-            last_error = GrokServiceError("Could not reach the Grok API (network error).", code="network_error")
+            last_error = GrokServiceError("Could not reach the Groq API (network error).", code="network_error")
         except json.JSONDecodeError:
-            last_error = GrokServiceError("Grok returned an unparseable response.", code="malformed_response")
+            last_error = GrokServiceError("Groq returned an unparseable response.", code="malformed_response")
 
         if attempt < config.GROK_MAX_RETRIES:
             time.sleep(0.4 * (attempt + 1))
 
-    raise last_error or GrokServiceError("Grok API call failed for an unknown reason.")
+    raise last_error or GrokServiceError("Groq API call failed for an unknown reason.")
 
 
 def timed_ms(start: float) -> float:
